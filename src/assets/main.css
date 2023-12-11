@@ -1,0 +1,64 @@
+@import './base.css';
+
+.mt-1 {
+  margin-top: 1rem;
+}
+
+.pt-1 {
+  padding-top: 1rem;
+}
+
+.mb-1 {
+  margin-bottom: 1rem;
+}
+
+.mb-2 {
+  margin-bottom: 2rem;
+}
+
+.mb-3 {
+  margin-bottom: 3rem;
+}
+
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.h-100vh {
+  height: 100vh;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.bottom-0 {
+  bottom: 0;
+}
+.bottom-1 {
+  bottom: 1rem;
+}
+
+/**
+  * Board Tiles and Keyboard colors
+ */
+.bg-init {
+  background: var(--color-keyboard);
+  color: var(--color-text-keyboard);
+}
+.bg-success {
+  background: var(--color-success);
+  color: var(--color-text-keyboard)
+}
+.bg-present {
+  background: var(--color-present);
+  color: var(--color-text-keyboard)
+}
+.bg-absent {
+  background: var(--color-absent);
+  color: var(--color-text-keyboard)
+}

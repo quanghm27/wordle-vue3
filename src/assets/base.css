@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Road+Rage&family=Shizuru&display=swap');
+:root {
+  --c-green: #51b784;
+  --c-yellow: #ccbe0b;
+  --c-gray: #7F8282;
+  --c-silver: #CCCBCB;
+  --c-white: #E9E9E9;
+
+  --c-dark-green: #418f66;
+  --c-dark-yellow: #E3E074;
+  --c-dark-gray: #A6A6A8;
+  --c-dark-silver: #E8E9F3;
+  --c-black: #272635;
+
+  --c-ebony: #5E5E55;
+}
+
+/* Theme light */
+:root {
+  --color-background: var(--c-white);
+  --color-text-word: var(--c-dark-silver); /* text of word */
+
+  --color-success: var(--c-green);
+  --color-present: var(--c-yellow);
+  --color-absent: var(--c-gray);
+
+  --color-text-keyboard: var(--c-ebony); /* text of keyboard */
+  --color-keyboard: var(--c-silver);
+}
+
+/* Theme dark */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: var(--c-black);
+    --color-text-word: var(--c-silver); /* text of word */
+
+    --color-success: var(--c-dark-green);
+    --color-present: var(--c-dark-yellow);
+    --color-absent: var(--c-dark-gray);
+
+    --color-text-keyboard: var(--c-ebony); /* text of keyboard */
+    --color-keyboard: var(--c-dark-silver);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  font-weight: normal;
+}
+
+body {
+  /* Mobile only */
+  max-width: 480px;
+  height: 100vh;
+  background: var(--color-background);
+  margin: 0 auto;
+  transition:
+    color 0.5s,
+    background-color 0.5s;
+  font-family: 'Road Rage', cursive;
+}
