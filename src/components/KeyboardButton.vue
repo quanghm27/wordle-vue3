@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { WordleButton, WordleStatus } from '@/types'
+import type { WButton } from '@/types'
 interface Props {
-  button: WordleButton
-  status: WordleStatus
+  button: WButton
   isTyping: boolean
 }
 const props = defineProps<Props>()
@@ -20,9 +19,9 @@ const buttonClasses = computed(() => {
 
 function getStatusClass() {
   // Order matters
-  if (props.status === 'success') return { 'bg-success': true }
-  if (props.status === 'present') return { 'bg-present': true }
-  if (props.status === 'absent') return { 'bg-absent': true }
+  if (props.button.status === 'success') return { 'bg-success': true }
+  if (props.button.status === 'present') return { 'bg-present': true }
+  if (props.button.status === 'absent') return { 'bg-absent': true }
   return { 'bg-init': true }
 }
 </script>
@@ -33,7 +32,7 @@ function getStatusClass() {
     :class="buttonClasses"
     @click="emits('click-a-button', button)"
   >
-    {{ button.display }}
+    {{ button.value }}
   </div>
 </template>
 <style scoped>

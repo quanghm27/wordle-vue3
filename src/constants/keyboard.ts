@@ -1,17 +1,63 @@
-import type { WordleButton } from '@/types'
+import type { WButton } from '@/types'
 
-// Keyboard Rows
-export const keyboardFirstRow: WordleButton[] = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'].map(mapKeyboard)
-export const keyboardSecondRow: WordleButton[] = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'].map(mapKeyboard)
-export const keyboardThirdRow: WordleButton[] = [
-  { type: 'letter', display: 'Enter', action: 'submit', largeSize: true },
-  ...['Z', 'X', 'C', 'V', 'B', 'N', 'M'].map(mapKeyboard),
-  { type: 'letter', display: 'Del', action: 'delete', largeSize: true }
+const _1stRow: WButton[] = [
+  'Q',
+  'W',
+  'E',
+  'R',
+  'T',
+  'Y',
+  'U',
+  'I',
+  'O',
+  'P'
+].map((letter) => initWButton(letter, 'type', false, '1st'))
+
+const _2ndRow: WButton[] = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'].map(
+  (letter) => initWButton(letter, 'type', false, '2nd')
+)
+
+const _3rdRow: WButton[] = [
+  ...['Enter'].map((letter) => initWButton(letter, 'submit', true, '3rd')),
+  ...['Z', 'X', 'C', 'V', 'B', 'N', 'M'].map((letter) =>
+    initWButton(letter, 'type', false, '3rd')
+  ),
+  ...['Del'].map((letter) => initWButton(letter, 'delete', true, '3rd'))
 ]
-// 2D array of keyboard buttons
-export const keyboard: WordleButton[][] = [keyboardFirstRow, keyboardSecondRow, keyboardThirdRow]
-export const flatKeyboard: WordleButton[] = keyboard.flat()
 
-function mapKeyboard(letter: string): WordleButton {
-  return { type: 'letter', display: letter, action: 'type', status: 'init' }
+function initWButton(
+  letter: string,
+  action: WButton['action'],
+  largeSize: WButton['largeSize'],
+  row: WButton['row']
+): WButton {
+  return {
+    type: 'letter',
+    value: letter,
+    action: action,
+    status: 'init',
+    largeSize: largeSize || false,
+    row: row
+  }
 }
+
+/**
+ * Keyboard rows
+ * @Example:
+ * "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"
+ *   "A", "S", "D", "F", "G", "H", "J", "K", "L"
+ * "Enter", "Z", "X", "C", "V", "B", "N", "M", "Del"
+ */
+const keyboardRows = {
+  keyboardFirstRow: _1stRow,
+  keyboardSecondRow: _2ndRow,
+  keyboardThirdRow: _3rdRow
+}
+
+export const { keyboardFirstRow, keyboardSecondRow, keyboardThirdRow } =
+  keyboardRows
+
+/**
+ * All keyboard buttons
+ */
+export const keyboardButtons: WButton[] = [_1stRow, _2ndRow, _3rdRow].flat()

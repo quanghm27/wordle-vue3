@@ -1,58 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import {
-  flatKeyboard,
-  keyboardFirstRow,
-  keyboardSecondRow,
-  keyboardThirdRow
-} from '@/constants/keyboard'
+import type { WButton } from '@/types'
 import useWordle from '@/composable/useWordle'
-import useKeyup from '@/composable/useKeyup'
+import useKeyboard from '@/composable/useKeyboard'
 import KeyboardButton from '@/components/KeyboardButton.vue'
-import type { WordleButton, WordleStatus } from '@/types'
 
-const { typing, submit, undo, keyboardTyping, keyboardVisited } = useWordle()
-// Add event listeners
-useKeyup([
-  ...flatKeyboard
-    .filter((x) => x.action === 'type')
-    .map((x) => ({ key: x.display, action: () => typing(x) })),
-  { key: 'Enter', action: submit },
-  { key: 'Backspace', action: undo }
-])
+const { typing, submit, undo } = useWordle()
+const { firstRow, secondRow, thirdRow } = useKeyboard()
 
-// Computed
-const computedKeyboardFirstRow = computed(() => keyboardFirstRow.map(addStatus))
-const computedKeyboardSecondRow = computed(() =>
-  keyboardSecondRow.map(addStatus)
-)
-const computedKeyboardThirdRow = computed(() => keyboardThirdRow.map(addStatus))
-
-function addStatus(button: WordleButton) {
-  const typingStatus = keyboardTyping.value.find(
-    (k) => k.display === button.display
-  )
-  // Order matters
-  const visitedStatus =
-    getStatus(button, 'success') ||
-    getStatus(button, 'present') ||
-    getStatus(button, 'absent')
-
-  return {
-    ...button,
-    status: visitedStatus || 'init',
-    isTyping: typingStatus?.status === 'typing'
-  }
-}
-function getStatus(button: WordleButton, status: WordleStatus) {
-  const check = keyboardVisited.value.some(
-    (k) => k.display === button.display && k.status === status
-  )
-  return check && status
-}
-
-// Methods
-function handleClick(button: WordleButton) {
+// Handler methods
+function handleClick(button: WButton) {
   if (button.action === 'submit') return submit()
   if (button.action === 'delete') return undo()
   typing(button)
@@ -63,31 +19,28 @@ function handleClick(button: WordleButton) {
   <div class="wordle-keyboard">
     <div class="wordle-keyboard__row">
       <KeyboardButton
-        v-for="(button, index2) in computedKeyboardFirstRow"
-        :key="index2 + '__' + button.display"
+        v-for="(button, index2) in firstRow"
+        :key="index2 + '__' + button.value"
         :button="button"
-        :status="button.status"
-        :is-typing="button.isTyping"
+        :is-typing="button.isTyping as boolean"
         @click-a-button="handleClick"
       />
     </div>
     <div class="wordle-keyboard__row">
       <KeyboardButton
-        v-for="(button, index2) in computedKeyboardSecondRow"
-        :key="index2 + '__' + button.display"
+        v-for="(button, index2) in secondRow"
+        :key="index2 + '__' + button.value"
         :button="button"
-        :status="button.status"
-        :is-typing="button.isTyping"
+        :is-typing="button.isTyping as boolean"
         @click-a-button="handleClick"
       />
     </div>
     <div class="wordle-keyboard__row">
       <KeyboardButton
-        v-for="(button, index2) in computedKeyboardThirdRow"
-        :key="index2 + '__' + button.display"
+        v-for="(button, index2) in thirdRow"
+        :key="index2 + '__' + button.value"
         :button="button"
-        :status="button.status"
-        :is-typing="button.isTyping"
+        :is-typing="button.isTyping as boolean"
         @click-a-button="handleClick"
       />
     </div>

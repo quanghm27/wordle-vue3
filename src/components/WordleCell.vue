@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { WordleCellLetter } from '@/types'
+import type { WBoardLetter } from '@/types'
 
-const props = defineProps<{ letter: WordleCellLetter }>()
+const props = defineProps<{ letter: WBoardLetter }>()
 const statusClass = computed(() => {
   // Order matters
   if (props.letter.status === 'success') return 'bg-success'
@@ -14,7 +14,7 @@ const statusClass = computed(() => {
 </script>
 <template>
   <div class="wordle-cell bg-init" :class="statusClass">
-    {{ letter.display }}
+    {{ letter.value }}
   </div>
 </template>
 <style scoped>

@@ -1,12 +1,6 @@
-import type { ComputedRef, Ref } from 'vue'
+import type { Ref } from 'vue'
 import { computed, readonly, ref } from 'vue'
-import type {
-  WordleCellLetter,
-  WordleResult,
-  WordleButton,
-  BaseWordleToken,
-  WordleResultStatus
-} from '@/types'
+import type { WBoardLetter, WButton, WGameResult, WLetterStatus } from '@/types'
 
 export default function () {
   return {
@@ -14,50 +8,50 @@ export default function () {
     submit,
     undo,
     gameResult: readonly(gameResult),
-    keyboardVisited: readonly(keyboardVisited),
-    keyboardTyping: readonly(keyboardTyping),
-    wordBoard5x5: readonly(wordBoard5x5)
+    wordBoard5x5: readonly(wordBoard5x5),
+    kbStatusMap: keyboardStatusMap,
+    kbTyping: keyboardTyping
   }
 }
 
 /**
  * Game board
  */
-const gameResult: Ref<WordleResultStatus> = ref('start')
-const wordBoard5x5: Ref<WordleCellLetter[][]> = ref(initWordBoard5x5()) // Init default Tiles
-const wordBoardTyping: Ref<WordleCellLetter[]> = computed(() =>
-  typingLetters.value.map((t) => ({ ...t }))
-)
+const gameResult: Ref<WGameResult> = ref('start')
+const wordBoard5x5: Ref<WBoardLetter[][]> = ref(initWordBoard5x5()) // Init default Tiles
 /**
  * Keyboard
  */
-const keyboardVisited: Ref<WordleButton[]> = ref([])
-const keyboardTyping: ComputedRef<WordleButton[]> = computed(() =>
-  typingLetters.value.map((t) => ({
-    ...t,
-    type: 'letter',
-    action: 'type'
-  }))
-)
+const keyboardStatusMap: Ref<Map<string, WLetterStatus>> = ref(new Map())
+const keyboardTyping: Ref<string[]> = ref([])
 /**
  * Game temp states
  */
 const turn: Ref<number> = ref(1)
-const typingLetters: Ref<BaseWordleToken[]> = ref([])
+const notAllowedTyping = computed(
+  () =>
+    gameResult.value === 'win' ||
+    gameResult.value === 'lose' ||
+    keyboardTyping.value.length === 5
+)
+const notAllowedSubmit = computed(
+  () =>
+    gameResult.value === 'win' ||
+    gameResult.value === 'lose' ||
+    keyboardTyping.value.length < 5
+)
 /**
  * User choose a letter
- * @param keyboardToken
+ * @param token
  * @description keyboard and wordBoard should be updated
  */
-function typing(keyboardToken: WordleButton) {
-  if (notAllowedTyping()) return
-  if (keyboardToken.action === 'type') {
-    typingLetters.value.push({
-      ...keyboardToken,
-      status: 'typing'
-    })
-    // Set wordBoard
-    wordBoard5x5.value[turn.value - 1] = mergeWithDefault(wordBoardTyping.value)
+function typing(token: WButton) {
+  if (notAllowedTyping.value) return
+  if (token.action === 'type') {
+    keyboardTyping.value.push(token.value)
+    wordBoard5x5.value[turn.value - 1] = mergeWithDefault(
+      keyboardTyping.value.map((t) => ({ value: t, status: 'typing' }))
+    )
   }
 }
 
@@ -65,17 +59,19 @@ function typing(keyboardToken: WordleButton) {
  * User submit word
  */
 async function submit() {
-  if (notAllowedSubmit()) return
-  const result = await checkWord()
-  typingLetters.value = result.resultWord
+  if (notAllowedSubmit.value) return
+  const { result, checkedWord } = await checkWord()
+  // Set keyboard status
+  checkedWord.forEach((item) => {
+    // Not change status of success button
+    if (keyboardStatusMap.value.get(item.value) === 'success') return
+    keyboardStatusMap.value.set(item.value, item.status || 'init')
+  })
   // Set wordBoard
-  wordBoard5x5.value[turn.value - 1] = wordBoardTyping.value
-  // Set keyboard
-  keyboardVisited.value = keyboardVisited.value.concat(
-    result.resultWord.map((t) => ({ ...t, type: 'letter', action: 'type' }))
-  )
-  clearTypingWord()
-  gameResult.value = result.result
+  wordBoard5x5.value[turn.value - 1] = mergeWithDefault(checkedWord)
+  gameResult.value = result
+  // Reset keyboard
+  keyboardTyping.value = []
   turn.value += 1
 }
 /**
@@ -83,41 +79,37 @@ async function submit() {
  * @description keyboard and wordBoard should be updated
  */
 function undo() {
-  if (wordBoardTyping.value.length === 0) return
-  typingLetters.value.pop()
+  if (keyboardTyping.value.length === 0) return
+  keyboardTyping.value.pop()
   // Set wordBoard
-  wordBoard5x5.value[turn.value - 1] = mergeWithDefault(wordBoardTyping.value)
-}
-function notAllowedTyping() {
-  return (
-    gameResult.value === 'win' ||
-    gameResult.value === 'lose' ||
-    // Full 5 letters typing
-    (wordBoardTyping.value.length === 5 &&
-      wordBoardTyping.value.every((t) => t.status && t.status === 'typing'))
+  wordBoard5x5.value[turn.value - 1] = mergeWithDefault(
+    keyboardTyping.value.map((t) => ({ value: t, status: 'typing' }))
   )
 }
-function notAllowedSubmit() {
-  return (
-    gameResult.value === 'win' ||
-    gameResult.value === 'lose' ||
-    wordBoardTyping.value.length < 5
-  )
-}
-async function checkWord(): Promise<WordleResult> {
+
+async function checkWord(): Promise<{
+  result: WGameResult
+  checkedWord: WBoardLetter[]
+}> {
   let wordToday = await getWordToday()
-  const word = typingLetters.value.map((t) => t.display.toLowerCase()).join('')
+  const word = keyboardTyping.value.join('').toLowerCase()
   // Init result word. Assume all letters are absent
-  let resultWord = typingLetters.value.map((t) => ({ ...t, status: 'absent' }))
+  let resultWord: WBoardLetter[] = keyboardTyping.value.map((t) => ({
+    value: t,
+    status: 'absent'
+  }))
   if (word === wordToday) {
     // Perfect case, match word. Set status for all letters as success
-    resultWord = typingLetters.value.map((t) => ({ ...t, status: 'success' }))
+    resultWord = keyboardTyping.value.map((t) => ({
+      value: t,
+      status: 'success'
+    }))
   }
 
   // Mark some letters as Success
   resultWord = resultWord.map((item, index) => {
     const letterAtChar = wordToday.charAt(index)
-    if (letterAtChar === item.display.toLowerCase()) {
+    if (letterAtChar === item.value.toLowerCase()) {
       wordToday = replaceAtIndex(wordToday, index)
       return { ...item, status: 'success' }
     }
@@ -126,7 +118,7 @@ async function checkWord(): Promise<WordleResult> {
 
   // Mark some letters as Present
   resultWord = resultWord.map((item) => {
-    const indexInAnswer = wordToday.indexOf(item.display.toLowerCase())
+    const indexInAnswer = wordToday.indexOf(item.value.toLowerCase())
     if (indexInAnswer > -1 && item.status !== 'success') {
       wordToday = replaceAtIndex(wordToday, indexInAnswer)
       return { ...item, status: 'present' }
@@ -140,50 +132,49 @@ async function checkWord(): Promise<WordleResult> {
 
   return {
     result: (isWin && 'win') || (isLose && 'lose') || 'wrong',
-    resultWord: resultWord as WordleCellLetter[]
+    checkedWord: resultWord
   }
 }
-function replaceAtIndex(wordToday: string, index: number) {
-  return wordToday.slice(0, index) + '_' + wordToday.slice(index + 1)
+
+function replaceAtIndex(word: string, index: number) {
+  return word.slice(0, index) + '_' + word.slice(index + 1)
 }
-function clearTypingWord() {
-  typingLetters.value = []
-}
+
 async function getWordToday() {
   const YYYY = new Date().getFullYear()
   const MM = (new Date().getMonth() + 1).toString().padStart(2, '0')
   const DD = new Date().getDate().toString().padStart(2, '0')
   const today = `${YYYY}-${MM}-${DD}`
-  const API_URL = `https://www.nytimes.com/svc/wordle/v2/${today}.json`
-
   // const response = await fetch(API_URL)
   // console.log(await response.json())
   return 'apple'
   // return (await response.json()).results[0].solution.toLowerCase()
 }
-function mergeWithDefault(array: WordleCellLetter[]) {
-  const defaultArray: WordleCellLetter[] = new Array(5)
-    .fill({ display: '', status: 'init' })
-    .map((item) => ({ ...item, id: Math.random().toString(36).substr(2, 9) }))
+
+function mergeWithDefault(array: WBoardLetter[]): WBoardLetter[] {
+  const defaultArray: WBoardLetter[] = new Array(5).fill({
+    value: '',
+    status: 'init'
+  })
 
   return defaultArray.map((item, index) => {
     if (array[index]) {
       return {
-        ...array[index],
-        id: Math.random().toString(36).substr(2, 9)
+        value: array[index].value,
+        status: array[index].status || 'typing'
       }
     }
     return item
   })
 }
+
 function initWordBoard5x5() {
   return new Array(5)
-    .fill(new Array(5).fill({ display: '', status: 'init' }))
+    .fill(new Array(5).fill({ value: '', status: 'init' }))
     .map((row) =>
       row.map((item: any) => {
         return {
-          ...item,
-          id: Math.random().toString(36).substr(2, 9)
+          ...item
         }
       })
     )
